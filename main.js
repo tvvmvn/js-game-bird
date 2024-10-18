@@ -6,16 +6,13 @@ var ctx = canvas.getContext("2d");
 
 // class
 class Actor {
-  constructor() {
-    this.width = 30;
-    this.height = 30;
-    this.x = 100;
-    this.y = 120;
-    this.speedY = 0;
-    this.color = "#0bf";
-    this.gravity = 0.05;
-    this.gravitySpeed = 0;
-  }
+  width = 30;
+  height = 30;
+  x = 100;
+  y = 120;
+  color = "#0bf";
+  gravity = 0.05; // private
+  gravitySpeed = 0;
 
   fall() {
     if (this.y > canvas.height) {
@@ -25,10 +22,13 @@ class Actor {
     return false;
   }
 
+  setGravity(n) {
+    this.gravity = n;
+  }
+
   render() {
-    // gravity is -0.2 or 0.05
     this.gravitySpeed += this.gravity;
-    this.y += this.speedY + this.gravitySpeed;
+    this.y += this.gravitySpeed;
 
     if (this.y < 0) {
       this.y = 0;
@@ -87,9 +87,9 @@ class ObstacleGenerator {
 
   render() {
     // activate each obstacle and
-    this.frameNo += 1;
+    this.frameNo++;
 
-    if ((this.frameNo / 150) % 1 == 0) {
+    if (this.frameNo % 200 == 0) {
       this.obstacles.push(new Obstacle());
       this.ready++;
     }
@@ -97,6 +97,7 @@ class ObstacleGenerator {
     // render it.
     for (var i = 0; i < this.ready; i++) {
       var obstacle = this.obstacles[i];
+
       obstacle.x += -1;
       
       ctx.fillStyle = obstacle.color;
@@ -121,19 +122,17 @@ class Game {
   actor = new Actor();
   obstacleGenerator = new ObstacleGenerator();
   message = new Message();
-  over = false;
+  timer;
 
-  gameOver() {
-    if (this.actor.y > canvas.height) {
-      this.over = true;
-    }
+  constructor() {
+    this.timer = setInterval(() => this.actionPerformed(), 10);
   }
 
   clearCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 
-  render() {
+  actionPerformed() {
     this.clearCanvas();
     this.actor.render();
     this.obstacleGenerator.render();
@@ -143,23 +142,20 @@ class Game {
       || this.obstacleGenerator.collisionDetection(this.actor.x, this.actor.x + this.actor.width, this.actor.y, this.actor.y + this.actor.height)
     ) {
       this.message.render("GAME OVER");
+      clearInterval(this.timer);
+    } 
+  }
+
+  clickHandler(pressed) {
+    if (pressed) {
+      this.actor.setGravity(-0.2);
     } else {
-      requestAnimationFrame(() => this.render());
+      this.actor.setGravity(0.05);
     }
-  }
-
-  mouseDown() {
-    this.actor.gravity = -0.2;
-  }
-
-  mouseUp() {
-    this.actor.gravity = 0.05;
   }
 }
 
 var game = new Game();
 
-btn.addEventListener("mousedown", (e) => game.mouseDown(e));
-btn.addEventListener("mouseup", (e) => game.mouseUp(e));
-
-game.render();
+btn.addEventListener("mousedown", () => game.clickHandler(true));
+btn.addEventListener("mouseup", () => game.clickHandler(false));
