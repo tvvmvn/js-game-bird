@@ -2,6 +2,7 @@
 var canvas = document.getElementById("myCanvas");
 canvas.width = 500;
 canvas.height = 300;
+canvas.style["backgroundColor"] = "#f1f1f1";
 var ctx = canvas.getContext("2d");
 
 // class
@@ -11,8 +12,8 @@ class Actor {
   x = 100;
   y = 120;
   color = "#0bf";
-  gravity = 0.05; // private
-  gravitySpeed = 0;
+  gravity = 0;
+  jumpable = true;
 
   fall() {
     if (this.y > canvas.height) {
@@ -22,17 +23,14 @@ class Actor {
     return false;
   }
 
-  setGravity(n) {
-    this.gravity = n;
-  }
-
   render() {
-    this.gravitySpeed += this.gravity;
-    this.y += this.gravitySpeed;
+    this.gravity += 0.1;
+    // console.log(gravity);
 
+    this.y += this.gravity;
+    
     if (this.y < 0) {
       this.y = 0;
-      this.gravitySpeed = 0;
     }
 
     ctx.fillStyle = this.color;
@@ -41,37 +39,22 @@ class Actor {
 }
 
 class Obstacle {
-  width = 10;
-  height1 = 0;
-  height2 = 0;
+  width = 40;
+  totalHeight = 200;
+  height1 = Math.random() * this.totalHeight;
+  height2 = this.totalHeight - this.height1;
   x = canvas.width;
   y1 = 0
   y2 = canvas.height - this.height2;
   color = "green";
-  max = 250;
-  min = 100;
-
-  // to create obstacles with proper size.
-  constructor() {
-    while (true) {
-      this.height1 = Math.random() * canvas.height;
-      this.height2 = Math.random() * canvas.height;
-      this.y2 = canvas.height - this.height2;
-      
-      if (this.height1 + this.height2 < this.max && this.height1 + this.height2 > this.min) {
-        break;
-      }
-    }
-  }
 }
 
 class ObstacleGenerator {
   obstacles = [];
   frameNo = 0;
-  ready = 0;
   
   collisionDetection(actorLeft, actorRight, actorTop, actorBottom) {
-    for (var i = 0; i < this.ready; i++) {
+    for (var i = 0; i < this.obstacles.length; i++) {
       var obstacle = this.obstacles[i];
 
       if (
@@ -91,11 +74,10 @@ class ObstacleGenerator {
 
     if (this.frameNo % 200 == 0) {
       this.obstacles.push(new Obstacle());
-      this.ready++;
     }
 
     // render it.
-    for (var i = 0; i < this.ready; i++) {
+    for (var i = 0; i < this.obstacles.length; i++) {
       var obstacle = this.obstacles[i];
 
       obstacle.x += -1;
@@ -107,25 +89,28 @@ class ObstacleGenerator {
   }
 }
 
-class Message {
-  textColor = "#000";
-
-  render(message) {
-    ctx.font = "16px Monospace";
-    ctx.fillStyle = this.textColor;
-    ctx.textAlign = "center";
-    ctx.fillText(message, canvas.width / 2, canvas.height / 2);
-  }
-}
-
 class Game {
   actor = new Actor();
   obstacleGenerator = new ObstacleGenerator();
-  message = new Message();
+  score = 0;
   timer;
 
   constructor() {
     this.timer = setInterval(() => this.actionPerformed(), 10);
+  }
+
+  renderOver() {
+    ctx.font = "16px Monospace";
+    ctx.fillStyle = "#000";
+    ctx.textAlign = "center";
+    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
+  }
+
+  renderScore() {
+    ctx.font = "16px Monospace";
+    ctx.fillStyle = "#000";
+    ctx.textAlign = "center";
+    ctx.fillText("score: " + this.score, canvas.width - 80, 40);
   }
 
   clearCanvas() {
@@ -136,26 +121,34 @@ class Game {
     this.clearCanvas();
     this.actor.render();
     this.obstacleGenerator.render();
+    // this.renderScore();
 
     if (
       this.actor.fall() 
       || this.obstacleGenerator.collisionDetection(this.actor.x, this.actor.x + this.actor.width, this.actor.y, this.actor.y + this.actor.height)
     ) {
-      this.message.render("GAME OVER");
+      this.renderOver();
       clearInterval(this.timer);
     } 
   }
 
-  clickHandler(pressed) {
-    if (pressed) {
-      this.actor.setGravity(-0.2);
-    } else {
-      this.actor.setGravity(0.05);
+  keyDownHandler(key) {
+    if (key == ' ') {
+      if (this.actor.jumpable) {
+        this.actor.gravity = -3;
+        this.actor.jumpable = false;
+      }
+    }
+  }
+
+  keyUpHandler(key) {
+    if (key == ' ') {
+      this.actor.jumpable = true;
     }
   }
 }
 
 var game = new Game();
 
-btn.addEventListener("mousedown", () => game.clickHandler(true));
-btn.addEventListener("mouseup", () => game.clickHandler(false));
+document.addEventListener("keydown", (e) => game.keyDownHandler(e.key));
+document.addEventListener("keyup", (e) => game.keyUpHandler(e.key))
