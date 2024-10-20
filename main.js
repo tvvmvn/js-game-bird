@@ -11,9 +11,12 @@ class Actor {
   height = 30;
   x = 100;
   y = 120;
-  color = "#0bf";
   gravity = 0;
-  jumpable = true;
+  color = "#0bf";
+
+  setGravity(val) {
+    this.gravity = val;
+  }
 
   fall() {
     if (this.y > canvas.height) {
@@ -47,103 +50,122 @@ class Obstacle {
   y1 = 0
   y2 = canvas.height - this.height2;
   color = "green";
-}
+  passed = false;
 
-class ObstacleGenerator {
-  obstacles = [];
-  frameNo = 0;
-  
-  collisionDetection(actorLeft, actorRight, actorTop, actorBottom) {
-    for (var i = 0; i < this.obstacles.length; i++) {
-      var obstacle = this.obstacles[i];
-
-      if (
-        obstacle.x < actorRight && obstacle.x + obstacle.width > actorLeft
-        && (obstacle.y1 + obstacle.height1 > actorTop || obstacle.y2 < actorBottom)
-      ) {
-        return true;
-      }
+  collisionDetection(actor) {
+    if (
+      this.x < actor.x + actor.width && this.x + this.width > actor.x
+      && (this.y1 + this.height1 > actor.y || this.y2 < actor.y + actor.height)
+    ) {
+      return true;
     }
-
+  
     return false;
   }
 
+  render() {      
+    this.x--;
+    
+    ctx.fillStyle = this.color;
+    ctx.fillRect(this.x, this.y1, this.width, this.height1);
+    ctx.fillRect(this.x, this.y2, this.width, this.height2);
+  }
+}
+
+class Score {
+  value = 0;
+  
+  add() {
+    this.value++;
+  }
+  
   render() {
-    // activate each obstacle and
+    ctx.font = "16px Monospace";
+    ctx.fillStyle = "#000";
+    ctx.textAlign = "center";
+    ctx.fillText("score: " + this.value, canvas.width - 80, 40);
+  }
+}
+
+class GameOver {
+  render() {
+    ctx.font = "16px Monospace";
+    ctx.fillStyle = "#000";
+    ctx.textAlign = "center";
+    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
+    // ctx.globalCompositeOperation = "";
+  }
+}
+
+class Game {
+  actor = new Actor();
+  score = new Score();
+  gameOver = new GameOver();
+  obstacles = [];
+  frameNo = 0;
+  inputable = true;
+  timer;
+  
+  constructor() {
+    this.timer = setInterval(() => this.actionPerformed(), 10);
+  }
+
+  clearScreen() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  actionPerformed() {
+    this.clearScreen();
+
+    // Actor
+    this.actor.render();
+
+    if (this.actor.fall()) {
+      this.gameOver.render();
+      clearInterval(this.timer);
+    } 
+
+    // Obstacles
     this.frameNo++;
 
     if (this.frameNo % 200 == 0) {
       this.obstacles.push(new Obstacle());
     }
 
-    // render it.
     for (var i = 0; i < this.obstacles.length; i++) {
       var obstacle = this.obstacles[i];
 
-      obstacle.x += -1;
-      
-      ctx.fillStyle = obstacle.color;
-      ctx.fillRect(obstacle.x, obstacle.y1, obstacle.width, obstacle.height1);
-      ctx.fillRect(obstacle.x, obstacle.y2, obstacle.width, obstacle.height2);
+      if (!obstacle.passed) {
+        if (obstacle.collisionDetection(this.actor)) {
+          this.gameOver.render();
+          clearInterval(this.timer);
+        }
+
+        if (this.actor.x > obstacle.x + obstacle.width) {
+          this.score.add();
+          obstacle.passed = true;
+        }
+      }
+
+      obstacle.render();
     }
-  }
-}
 
-class Game {
-  actor = new Actor();
-  obstacleGenerator = new ObstacleGenerator();
-  score = 0;
-  timer;
-
-  constructor() {
-    this.timer = setInterval(() => this.actionPerformed(), 10);
-  }
-
-  renderOver() {
-    ctx.font = "16px Monospace";
-    ctx.fillStyle = "#000";
-    ctx.textAlign = "center";
-    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
-  }
-
-  renderScore() {
-    ctx.font = "16px Monospace";
-    ctx.fillStyle = "#000";
-    ctx.textAlign = "center";
-    ctx.fillText("score: " + this.score, canvas.width - 80, 40);
-  }
-
-  clearCanvas() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }
-
-  actionPerformed() {
-    this.clearCanvas();
-    this.actor.render();
-    this.obstacleGenerator.render();
-    // this.renderScore();
-
-    if (
-      this.actor.fall() 
-      || this.obstacleGenerator.collisionDetection(this.actor.x, this.actor.x + this.actor.width, this.actor.y, this.actor.y + this.actor.height)
-    ) {
-      this.renderOver();
-      clearInterval(this.timer);
-    } 
+    // Score
+    this.score.render();
   }
 
   keyDownHandler(key) {
     if (key == ' ') {
-      if (this.actor.jumpable) {
-        this.actor.gravity = -3;
-        this.actor.jumpable = false;
+      if (this.inputable) {
+        this.actor.setGravity(-3);
+        this.inputable = false;
       }
     }
   }
 
   keyUpHandler(key) {
     if (key == ' ') {
-      this.actor.jumpable = true;
+      this.inputable = true;
     }
   }
 }
