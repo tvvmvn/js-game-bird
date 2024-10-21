@@ -11,12 +11,7 @@ class Actor {
   height = 30;
   x = 100;
   y = 120;
-  gravity = 0;
   color = "#0bf";
-
-  setGravity(val) {
-    this.gravity = val;
-  }
 
   fall() {
     if (this.y > canvas.height) {
@@ -26,16 +21,15 @@ class Actor {
     return false;
   }
 
-  render() {
-    this.gravity += 0.1;
-    // console.log(gravity);
-
-    this.y += this.gravity;
+  setY(gravity) {
+    this.y += gravity;
     
     if (this.y < 0) {
       this.y = 0;
     }
+  }
 
+  render() {
     ctx.fillStyle = this.color;
     ctx.fillRect(this.x, this.y, this.width, this.height);
   }
@@ -63,9 +57,11 @@ class Obstacle {
     return false;
   }
 
-  render() {      
+  setMove() {
     this.x--;
-    
+  }
+
+  render() {      
     ctx.fillStyle = this.color;
     ctx.fillRect(this.x, this.y1, this.width, this.height1);
     ctx.fillRect(this.x, this.y2, this.width, this.height2);
@@ -103,6 +99,7 @@ class Game {
   gameOver = new GameOver();
   obstacles = [];
   frameNo = 0;
+  gravity = 0;
   inputable = true;
   timer;
   
@@ -119,6 +116,8 @@ class Game {
 
     // Actor
     this.actor.render();
+    this.actor.setY(this.gravity);
+    this.gravity += 0.1;
 
     if (this.actor.fall()) {
       this.gameOver.render();
@@ -147,6 +146,7 @@ class Game {
         }
       }
 
+      obstacle.setMove();
       obstacle.render();
     }
 
@@ -157,7 +157,7 @@ class Game {
   keyDownHandler(key) {
     if (key == ' ') {
       if (this.inputable) {
-        this.actor.setGravity(-3);
+        this.gravity = -3;
         this.inputable = false;
       }
     }
