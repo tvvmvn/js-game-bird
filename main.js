@@ -6,11 +6,25 @@ canvas.style["backgroundColor"] = "#f1f1f1";
 var ctx = canvas.getContext("2d");
 
 // class
+class Intro {
+  render() {
+    ctx.font = "30px Monospace";
+    ctx.fillStyle = "#0bf";
+    ctx.textAlign = "center";
+    ctx.fillText("Flappy Bird", canvas.width / 2, 130);
+
+    ctx.font = "16px Monospace";
+    ctx.fillStyle = "#000";
+    ctx.textAlign = "center";
+    ctx.fillText("Press any key to start", canvas.width / 2, 160);
+  }
+}
+
 class Actor {
   width = 30;
   height = 30;
-  x = 100;
-  y = 120;
+  x = 150;
+  y = 100;
   color = "#0bf";
 
   fall() {
@@ -23,7 +37,7 @@ class Actor {
 
   setY(gravity) {
     this.y += gravity;
-    
+
     if (this.y < 0) {
       this.y = 0;
     }
@@ -53,7 +67,7 @@ class Obstacle {
     ) {
       return true;
     }
-  
+
     return false;
   }
 
@@ -61,7 +75,7 @@ class Obstacle {
     this.x--;
   }
 
-  render() {      
+  render() {
     ctx.fillStyle = this.color;
     ctx.fillRect(this.x, this.y1, this.width, this.height1);
     ctx.fillRect(this.x, this.y2, this.width, this.height2);
@@ -70,11 +84,11 @@ class Obstacle {
 
 class Score {
   value = 0;
-  
+
   add() {
     this.value++;
   }
-  
+
   render() {
     ctx.font = "16px Monospace";
     ctx.fillStyle = "#000";
@@ -85,15 +99,16 @@ class Score {
 
 class GameOver {
   render() {
-    ctx.font = "16px Monospace";
+    ctx.font = "20px Monospace";
     ctx.fillStyle = "#000";
     ctx.textAlign = "center";
-    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
+    ctx.fillText("GAME OVER ⏩️", canvas.width / 2, canvas.height / 2);
     // ctx.globalCompositeOperation = "";
   }
 }
 
 class Game {
+  intro = new Intro();
   actor = new Actor();
   score = new Score();
   gameOver = new GameOver();
@@ -102,9 +117,13 @@ class Game {
   gravity = 0;
   inputable = true;
   timer;
-  
-  constructor() {
+  start;
+  over = false;
+
+  constructor(start) {
     this.timer = setInterval(() => this.actionPerformed(), 10);
+
+    this.start = start;
   }
 
   clearScreen() {
@@ -114,15 +133,22 @@ class Game {
   actionPerformed() {
     this.clearScreen();
 
+    // Show intro
+    if (!this.start) { 
+      this.intro.render();
+      return;
+    }
+
     // Actor
-    this.actor.render();
     this.actor.setY(this.gravity);
     this.gravity += 0.1;
+    this.actor.render();
 
     if (this.actor.fall()) {
-      this.gameOver.render();
-      clearInterval(this.timer);
-    } 
+      var s = new Audio("sfx_die.wav");
+      s.play();
+      this.over = true;
+    }
 
     // Obstacles
     this.frameNo++;
@@ -136,29 +162,51 @@ class Game {
 
       if (!obstacle.passed) {
         if (obstacle.collisionDetection(this.actor)) {
-          this.gameOver.render();
-          clearInterval(this.timer);
+          var s = new Audio("sfx_hit.wav");
+          s.play();
+
+          this.over = true;
         }
 
         if (this.actor.x > obstacle.x + obstacle.width) {
           this.score.add();
+
+          var s = new Audio("sfx_point.wav");
+          s.play();
+
           obstacle.passed = true;
         }
       }
 
-      obstacle.setMove();
       obstacle.render();
+      obstacle.setMove();
     }
 
     // Score
     this.score.render();
+
+    if (this.over) {
+      clearInterval(this.timer);
+      this.gameOver.render();
+    }
   }
 
   keyDownHandler(key) {
-    if (key == ' ') {
-      if (this.inputable) {
-        this.gravity = -3;
-        this.inputable = false;
+    if (this.over) {
+      game = new Game(true);
+    } else {
+      if (!this.start) {
+        this.start = true;
+      } else {
+        if (key == ' ') {
+          if (this.inputable) {
+            var s = new Audio("sfx_wing.wav");
+            s.play();
+
+            this.gravity = -3;
+            this.inputable = false;
+          }
+        }
       }
     }
   }
@@ -170,7 +218,6 @@ class Game {
   }
 }
 
-var game = new Game();
-
+var game = new Game(false);
 document.addEventListener("keydown", (e) => game.keyDownHandler(e.key));
-document.addEventListener("keyup", (e) => game.keyUpHandler(e.key))
+document.addEventListener("keyup", (e) => game.keyUpHandler(e.key));
