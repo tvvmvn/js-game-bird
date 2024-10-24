@@ -27,28 +27,14 @@ class Intro extends Image {
 
   render() {
     // drawImage(image, dx, dy, dwidth, dheight)
-    ctx.drawImage(this, canvas.width / 2 - (this.width / 2), (canvas.height / 2) - this.height, this.width, this.height);
-  }
-}
-
-class StartButton extends Image {
-  constructor() {
-    super();
-    this.src = "start.png";
-    this.width /= 3;
-    this.height /= 3;
-  }
-
-  render() {
-    // drawImage(image, dx, dy, dwidth, dheight)
-    ctx.drawImage(this, canvas.width / 2 - (this.width / 2), (canvas.height / 2) + this.height, this.width, this.height);
+    ctx.drawImage(this, canvas.width / 2 - (this.width / 2), canvas.height / 5, this.width, this.height);
   }
 }
 
 class Actor extends Image {
   // src  
   x = 150;
-  y = 100;
+  y = 150;
   color = "#0bf";
   s = 0;
   
@@ -166,20 +152,18 @@ class GameOver extends Image {
 class Game {
   bg = new Background();
   intro = new Intro();
-  startBtn = new StartButton();
   actor = new Actor();
   score = new Score();
   gameOver = new GameOver();
   obstacles = [];
   frameNo = 0;
-  gravity = 0;
-  timer;
-  start;
+  gravity = -3;
+  start = false;
   over = false;
+  timer;
 
   constructor(start) {
     this.timer = setInterval(() => this.actionPerformed(), 10);
-
     this.start = start;
   }
 
@@ -193,10 +177,10 @@ class Game {
     // Background
     this.bg.render();
 
-    // Title
+    // Intro
     if (!this.start) { 
       this.intro.render();
-      this.startBtn.render();
+      this.actor.render();
       return;
     }
 
@@ -259,12 +243,12 @@ class Game {
     } else {
       if (!this.start) {
         this.start = true;
-      } else {
-        var s = new Audio("sfx_wing.wav");
-        s.play();
+      } 
 
-        this.gravity = -3;
-      }
+      var s = new Audio("sfx_wing.wav");
+      s.play();
+
+      this.gravity = -3;
     }
   }
 }
