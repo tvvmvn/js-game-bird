@@ -17,24 +17,10 @@ class Background extends Image {
 }
 
 // class
-class Intro extends Image {
-  constructor() {
-    super();
-    this.src = "logo.png";
-    this.width /= 3;
-    this.height /= 3;
-  }
-
-  render() {
-    // drawImage(image, dx, dy, dwidth, dheight)
-    ctx.drawImage(this, canvas.width / 2 - (this.width / 2), canvas.height / 5, this.width, this.height);
-  }
-}
-
 class Actor extends Image {
   // src  
   x = 150;
-  y = 150;
+  y = 100;
   color = "#0bf";
   s = 0;
   img = "flap_up.png";
@@ -154,15 +140,14 @@ class GameOver extends Image {
 
 class Game {
   bg = new Background();
-  intro = new Intro();
   actor = new Actor();
   score = new Score();
   gameOver = new GameOver();
   obstacles = [];
   frameNo = 0;
-  gravity = -3;
-  start = false;
+  gravity = 0;
   over = false;
+  inputable = true;
   timer;
 
   constructor() {
@@ -178,13 +163,6 @@ class Game {
 
     // Background
     this.bg.render();
-
-    // Intro
-    if (!this.start) { 
-      this.intro.render();
-      this.actor.render();
-      return;
-    }
 
     // Actor
     this.actor.setY(this.gravity);
@@ -239,21 +217,23 @@ class Game {
     }
   }
 
-  clickHandler(e) {
-    if (this.over) {
-      game = new Game();
-    } else {
-      if (!this.start) {
-        this.start = true;
-      } 
-
+  keyDownHandler(e) {
+    if (this.inputable && e.key == ' ') {
       var s = new Audio("sfx_wing.wav");
       s.play();
-
+  
       this.gravity = -3;
+      this.inputable = false;
+    }
+  }
+
+  keyUpHandler(e) {
+    if (e.key == ' ') {
+      this.inputable = true;
     }
   }
 }
 
 var game = new Game();
-canvas.addEventListener("mousedown", (e) => game.clickHandler(e))
+document.addEventListener("keydown", (e) => game.keyDownHandler(e));
+document.addEventListener("keyup", (e) => game.keyUpHandler(e));

@@ -27,34 +27,21 @@ class Intro extends Image {
 
   render() {
     // drawImage(image, dx, dy, dwidth, dheight)
-    ctx.drawImage(this, canvas.width / 2 - (this.width / 2), (canvas.height / 2) - this.height, this.width, this.height);
-  }
-}
-
-class StartButton extends Image {
-  constructor() {
-    super();
-    this.src = "start.png";
-    this.width /= 3;
-    this.height /= 3;
-  }
-
-  render() {
-    // drawImage(image, dx, dy, dwidth, dheight)
-    ctx.drawImage(this, canvas.width / 2 - (this.width / 2), (canvas.height / 2) + this.height, this.width, this.height);
+    ctx.drawImage(this, canvas.width / 2 - (this.width / 2), canvas.height / 5, this.width, this.height);
   }
 }
 
 class Actor extends Image {
   // src  
   x = 150;
-  y = 100;
+  y = 150;
   color = "#0bf";
   s = 0;
+  img = "flap_up.png";
   
   constructor() {
     super();
-    this.src = "flap_up.png";
+    this.src = this.img;
   }
 
   fall() {
@@ -80,20 +67,22 @@ class Actor extends Image {
     this.s++;
 
     if (this.s % 10 == 0) {
-      switch (this.src) {
-        case location.origin + "/flap_up.png":
-          this.src = location.origin + "/flap_center1.png";
+      switch (this.img) {
+        case "flap_up.png":
+          this.img = "flap_center1.png";
           break;
-        case location.origin + "/flap_center1.png":
-          this.src = location.origin + "/flap_down.png";
+        case "flap_center1.png":
+          this.img = "flap_down.png";
           break;
-        case location.origin + "/flap_down.png":
-          this.src = location.origin + "/flap_center2.png";
+        case "flap_down.png":
+          this.img = "flap_center2.png";
           break;
-        case location.origin + "/flap_center2.png":
-          this.src = location.origin + "/flap_up.png";
+        case "flap_center2.png":
+          this.img = "flap_up.png";
           break;
       }
+
+      this.src = this.img;
     }
   }
 }
@@ -125,7 +114,7 @@ class Obstacle extends Image {
   }
 
   setMove() {
-    this.x--;
+    this.x -= 2;
   }
 
   render() {
@@ -166,21 +155,18 @@ class GameOver extends Image {
 class Game {
   bg = new Background();
   intro = new Intro();
-  startBtn = new StartButton();
   actor = new Actor();
   score = new Score();
   gameOver = new GameOver();
   obstacles = [];
   frameNo = 0;
-  gravity = 0;
-  timer;
-  start;
+  gravity = -3;
+  start = false;
   over = false;
+  timer;
 
-  constructor(start) {
+  constructor() {
     this.timer = setInterval(() => this.actionPerformed(), 10);
-
-    this.start = start;
   }
 
   clearScreen() {
@@ -193,10 +179,10 @@ class Game {
     // Background
     this.bg.render();
 
-    // Title
+    // Intro
     if (!this.start) { 
       this.intro.render();
-      this.startBtn.render();
+      this.actor.render();
       return;
     }
 
@@ -214,7 +200,7 @@ class Game {
     // Obstacles
     this.frameNo++;
 
-    if (this.frameNo % 200 == 0) {
+    if (this.frameNo % 100 == 0) {
       this.obstacles.push(new Obstacle());
     }
 
@@ -255,19 +241,19 @@ class Game {
 
   clickHandler(e) {
     if (this.over) {
-      game = new Game(true);
+      game = new Game();
     } else {
       if (!this.start) {
         this.start = true;
-      } else {
-        var s = new Audio("sfx_wing.wav");
-        s.play();
+      } 
 
-        this.gravity = -3;
-      }
+      var s = new Audio("sfx_wing.wav");
+      s.play();
+
+      this.gravity = -3;
     }
   }
 }
 
-var game = new Game(false);
+var game = new Game();
 canvas.addEventListener("mousedown", (e) => game.clickHandler(e))
